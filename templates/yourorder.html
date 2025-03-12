@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+	{% block content %}
+	<section id="cart_items">
+		<div class="container">
+			<div class="breadcrumbs">
+				<ol class="breadcrumb">
+				  <li><a href="#">Home</a></li>
+				  <li class="active">Your Order</li>
+				</ol>
+			</div>
+			<div class="table-responsive cart_info">
+				
+				<table class="table table-condensed">
+					<thead>
+						<tr class="cart_menu">
+							<td class="image">Item</td>
+							<td class="description">Name</td>
+							<td class="price">Price</td>
+							<td class="quantity">Quantity</td>
+							<td class="total">Total</td>
+                            <td class="total">Status</td>
+							<td></td>
+						</tr>
+					</thead>
+					<tbody>
+						{% for a in ord %}
+						<tr>
+							<td class="cart_product">
+								<a href=""><img src="/media/{{a.image}}" alt=""></a>
+							</td>
+							<td class="cart_description">
+								<h4><a href="">{{a.ord_product}}</a></h4>
+							</td>
+							<td class="cart_price">
+								<p>${{a.price}}</p>
+							</td>
+							<td class="cart_quantity">
+								<div class="cart_quantity_button">
+									<input class="cart_quantity_input" type="text" name="quantity" value="{{a.quantity}}" autocomplete="off" size="2" readonly>
+								</div>
+							</td>
+							<td class="cart_total">
+								<p class="cart_total_price">${{ a.total }}</p>
+							</td>
+                            <td class="cart_total">
+								<p class="cart_total_price">{{ a.status }}</p>
+							</td>
+                            {% if a.status == 'PENDING' %}
+							<td class="cart_delete">
+								<a class="cart_quantity_delete" href="{% url 'ordcancle' a.id %}"><i class="fa fa-times"></i></a>
+							</td>
+                            {% endif %}
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			
+		</div>
+	</section> <!--/#cart_items-->
+	<br>
+
+	
+</body>
+</html>
+{% endblock %}

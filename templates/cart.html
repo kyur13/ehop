@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+	{% block content %}
+	<section id="cart_items">
+		<div class="container">
+			<div class="breadcrumbs">
+				<ol class="breadcrumb">
+				  <li><a href="#">Home</a></li>
+				  <li class="active">Shopping Cart</li>
+				</ol>
+			</div>
+			<div class="table-responsive cart_info">
+				<h3><a href="{% url 'cart_clear' %}">Clear Cart</a>
+				<table class="table table-condensed">
+					<thead>
+						<tr class="cart_menu">
+							<td class="image">Item</td>
+							<td class="description">Name</td>
+							<td class="price">Price</td>
+							<td class="quantity">Quantity</td>
+							<td class="total">Total</td>
+							<td></td>
+						</tr>
+					</thead>
+					<tbody>
+						{% for a in items %}
+						<tr>
+							<td class="cart_product">
+								<a href=""><img src="/media/{{a.cart_product.img}}" alt=""></a>
+							</td>
+							<td class="cart_description">
+								<h4><a href="">{{a.cart_product.name}}</a></h4>
+							</td>
+							<td class="cart_price">
+								<p>${{a.cart_product.discounted_price}}</p>
+							</td>
+							<td class="cart_quantity">
+								<div class="cart_quantity_button">
+									<a class="cart_quantity_up" href="{% url 'item_increment' a.cart_product.id %}"> + </a>
+									<input class="cart_quantity_input" type="text" name="quantity" value="{{a.quantity}}" autocomplete="off" size="2" readonly>
+									{% if a.quantity != 1 %}
+									<a class="cart_quantity_down" href="{% url 'item_decrement' a.cart_product.id %}"> - </a>
+									{% endif %}
+								</div>
+							</td>
+							<td class="cart_total">
+								<p class="cart_total_price">${{ a.finalprc }}</p>
+							</td>
+							<td class="cart_delete">
+								<a class="cart_quantity_delete" href="{% url 'item_clear' a.cart_product.id %}"><i class="fa fa-times"></i></a>
+							</td>
+						</tr>
+						{% endfor %}
+						<tr>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td><h3>Grand Total:</h3></td>
+							<td class="cart_total">
+								<p class="cart_total_price">${{ total_price }}</p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				{% if user.is_authenticated %}
+					{% if items %}
+					<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal" data-whatever="@getbootstrap" style="float: right;">Checkout</button>
+					{% endif %}
+				{% else %}
+					
+					<a href="{% url 'login' %}" class="btn btn-primary" style="float: right;">Checkout</a>
+				{% endif %}
+			</div>
+			
+		</div>
+	</section> <!--/#cart_items-->
+	<br>
+
+	<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	  <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		  <div class="modal-header">
+			<h5 class="modal-title" id="exampleModalLabel">Fill details</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			  <span aria-hidden="true">&times;</span>
+			</button>
+		  </div>
+		  <div class="modal-body">
+			<form method="post" action="/checkout/">
+				{% csrf_token %}
+			  <div class="form-group">
+				<label for="recipient-name" class="col-form-label">Phone:</label>
+				<input type="text" name="phone" class="form-control" id="recipient-name">
+			  </div>
+			  <div class="form-group">
+				<label for="message-text" class="col-form-label">Address:</label>
+				<textarea class="form-control" name="address" id="message-text"></textarea>
+			  </div>
+			  <div class="form-group">
+				<label for="recipient-name" class="col-form-label">Pincode:</label>
+				<input type="text" name="pincode" class="form-control" id="recipient-name">
+			  </div>
+			  <div class="modal-footer">
+				<button type="submit" class="btn btn-primary">Checkout</button>
+			  </div>
+			</form>
+		  </div>
+		  
+		</div>
+	  </div>
+	</div>
+	
+</body>
+</html>
+{% endblock %}

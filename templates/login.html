@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<body>
+	{% if messages %}
+        {% for msg in messages %}
+            <strong>{{msg}}</strong>
+        {% endfor %}
+    {% endif %}
+	<section id="form" style="margin: 30px 70px;"><!--form-->
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-4 col-sm-offset-1">
+					<div class="login-form"><!--login form-->
+						<h2>Login to your account</h2>
+						<form action="" method="post">
+							{% csrf_token %}
+							<input type="text" placeholder="Email" name="uname" />
+							<input type="password" placeholder="Password" name="psw" />
+							<a href="{% url 'signup' %}">Create new account </a>
+							<div class="g-recaptcha" data-sitekey="6LdxI-IqAAAAACpyVrReDrVvj38fgQ_DLwEJmIhZ"></div>
+							<button type="submit" class="btn btn-default">Login</button>
+						</form>
+					</div><!--/login form-->
+				</div>
+			</div>
+		</div>
+	</section><!--/form-->
+</body>
+</html>
+{% endblock %}

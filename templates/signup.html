@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<body>
+    {% if messages %}
+        {% for msg in messages %}
+            <strong>{{msg}}</strong>
+        {% endfor %}
+    {% endif %}
+
+	<section id="form" style="margin: 30px 70px;"><!--form-->
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-4">
+					<div class="signup-form"><!--sign up form-->
+						<h2>New User Signup!</h2>
+						<form action="{% url 'signup' %}" method="post">
+                            {% csrf_token %}
+							<input type="email" placeholder="Email Address" name="mail"/>
+							<input type="text" placeholder="First Name" name="fname" />
+							<input type="text" placeholder="Last Name" name="lname" />
+							<input type="text" placeholder="Enter Age" name="age" />
+							<input type="text" placeholder="Enter Hobbies" name="hobbie" />
+							<div>
+							<select name="gender" id="gender">
+									<option value="select">Select Gender</option>
+									<option value="male">Male</option>
+									<option value="female">Female</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+								<br>
+							<input type="password" placeholder="Password" name="psw1"/>
+                            <input type="password" placeholder="Confirm password" name="psw2"/>
+							 <!-- reCAPTCHA Widget -->
+							 <div class="g-recaptcha" data-sitekey="6LdxI-IqAAAAACpyVrReDrVvj38fgQ_DLwEJmIhZ"></div>
+							<button type="submit" class="btn btn-default">Signup</button>
+						</form>
+						
+					</div><!--/sign up form-->
+				</div>
+			</div>
+		</div>
+	</section><!--/form-->
+	
+</body>
+</html>
+{% endblock %}
