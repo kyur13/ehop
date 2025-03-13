@@ -12,6 +12,11 @@ from api.serializer import contactserializer
 from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required
 
+from django.conf import settings
+import razorpay
+from django.http import JsonResponse,HttpResponseBadRequest
+from django.views.decorators.csrf import csrf_exempt
+
 def home(request):
     slider_img=blog.objects.all()
     # extracted_images = []
@@ -340,14 +345,32 @@ def cart_clear(request):
         return response
     return redirect("cart_detail")
 
-
+client=razorpay.Client(auth=('rzp_test_NhGDVyDYFrniMc','66LbAS9oJths6recGwh4Z5pg'))
 def cart_detail(request):
+    callback_url=None
+    total_price_in_paise=None
     if request.user.is_authenticated:
         items = Cart.objects.filter(user=request.user)
         total_price = 0 
         for k in items:
             k.finalprc=k.cart_product.discounted_price()*k.quantity
             total_price += k.finalprc
+        
+
+        if total_price>0:
+            total_price_in_paise = total_price * 100
+        else:
+            total_price_in_paise=100
+        order_currency='INR'
+        data1={
+            'amount':total_price_in_paise, 'currency':order_currency, 'payment_capture':1
+        }
+        pay = client.order.create(data1)
+        razorpay_order_id = pay['id']
+        callback_url = 'http://127.0.0.1:8000/checkout/'   
+        
+        print(pay)
+        
     else:
         cart_cookie = request.COOKIES.get('cart', '[]')
         cart_products = json.loads(cart_cookie)
@@ -371,7 +394,8 @@ def cart_detail(request):
 
     data={
         'items':items,
-        'total_price':total_price
+        'total_price':total_price,
+        'callback_url':callback_url,'amount':total_price_in_paise, 'currency':order_currency, 'payment_capture':1,'razorpay_order_id':razorpay_order_id,
     }
     return render(request, 'cart.html',data)
 
@@ -387,32 +411,75 @@ def cart_item_count(request):
 
     return {'cart_item_count': total_items}
 
-@login_required(login_url='login')
+
+@csrf_exempt
 def checkout(request):
-    if request.method == 'POST':
-        add=request.POST.get('address')
-        pho=request.POST.get('phone')
-        pin=request.POST.get('pincode')
+    total_price = 0 
+    items = []
+
+    if request.user.is_authenticated:
         items = Cart.objects.filter(user=request.user)
-        if items:
-            for i in items:
-                ord=Order(
-                    user=request.user,
-                    ord_product=i.cart_product.name,
-                    price=i.cart_product.discounted_price(),
-                    quantity=i.quantity,
-                    image=i.cart_product.img,
-                    address=add,
-                    phone=pho,
-                    pincod=pin,
-                    total=i.cart_product.discounted_price()*i.quantity
-                )
-                ord.save()
-            items.delete()
-            return redirect('home')
-        else:
-            messages.error(request,"add something in cart..")
-            return redirect('cart_detail')
+            
+        for k in items:
+            k.finalprc=k.cart_product.discounted_price()*k.quantity
+            total_price += k.finalprc
+    if request.method == 'POST':
+        pho = request.POST.get('phone')  # Phone number
+        add = request.POST.get('address')  # Address
+        pin = request.POST.get('pincode')
+        print(add,pho,pin)
+        
+
+
+        
+        try:
+          
+            # get the required parameters from post request.
+            payment_id = request.POST.get('razorpay_payment_id', '')
+            razorpay_order_id = request.POST.get('razorpay_order_id', '')
+            signature = request.POST.get('razorpay_signature', '')
+            params_dict = {
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': payment_id,
+                'razorpay_signature': signature
+            }
+            print(params_dict)
+            # verify the payment signature.
+            result = client.utility.verify_payment_signature(
+                params_dict)
+            print(result)
+            if result:
+               
+                if items:
+                    for i in items:
+                        ord=Order(
+                            user=request.user,
+                            ord_product=i.cart_product.name,
+                            price=i.cart_product.discounted_price(),
+                            quantity=i.quantity,
+                            image=i.cart_product.img,
+                            address=add,
+                            phone=pho,
+                            pincod=pin,
+                            total=i.cart_product.discounted_price()*i.quantity
+                        )
+                        ord.save()
+                    items.delete()
+                    return JsonResponse({'status': 'success', 'message': 'Payment successful'})
+                else:
+                    messages.error(request,"add something in cart..")
+                    return JsonResponse({'status': 'failure', 'message': 'Payment verification failed'}, status=400)
+                # except:
+
+                #     # if there is an error while capturing payment.
+                #     return render(request, 'paymentfail.html')
+            else:
+
+                # if signature verification fails.
+                return render(request, 'paymentfail.html')
+        except Exception as e:
+
+           print(e)
     return HttpResponse('this is checkout page.')
 
 @login_required(login_url='login')

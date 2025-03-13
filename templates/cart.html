@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 	{% block content %}
+<body>
 	<section id="cart_items">
 		<div class="container">
 			<div class="breadcrumbs">
@@ -61,9 +62,50 @@
 						</tr>
 					</tbody>
 				</table>
+				
+				
 				{% if user.is_authenticated %}
 					{% if items %}
 					<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal" data-whatever="@getbootstrap" style="float: right;">Checkout</button>
+					{% comment %} <button id='rzp-button1' class="btn btn-primary"  style="float: right;">Checkout</button>
+					<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+						<script>
+							var order_id = {{ total_price }};
+							var total_price_in_paise = {{ total_price }};
+							var options = {
+								"key": "rzp_test_NhGDVyDYFrniMc", // Enter the Key ID generated from the Dashboard
+								"amount": total_price_in_paise, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+								"currency": "INR",
+								"name": "Acme Corp",
+								"description": "Test Transaction",
+								"image": "https://example.com/your_logo",
+								"order_id": order_id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+								"callback_url": "{{ callback_url }}",
+								"handler": function (response){
+									alert(response.razorpay_payment_id);
+									alert(response.razorpay_order_id);
+									alert(response.razorpay_signature)
+								},
+								
+								"theme": {
+									"color": "#3399cc"
+								}
+							};
+							var rzp1 = new Razorpay(options);
+							rzp1.on('payment.failed', function (response){
+									alert(response.error.code);
+									alert(response.error.description);
+									alert(response.error.source);
+									alert(response.error.step);
+									alert(response.error.reason);
+									alert(response.error.metadata.order_id);
+									alert(response.error.metadata.payment_id);
+							});
+							document.getElementById('rzp-button1').onclick = function(e){
+								rzp1.open();
+								e.preventDefault();
+							}
+						</script> {% endcomment %}
 					{% endif %}
 				{% else %}
 					
@@ -85,22 +127,23 @@
 			</button>
 		  </div>
 		  <div class="modal-body">
-			<form method="post" action="/checkout/">
+			<form method="post" name='razorpay-form'>
 				{% csrf_token %}
 			  <div class="form-group">
 				<label for="recipient-name" class="col-form-label">Phone:</label>
-				<input type="text" name="phone" class="form-control" id="recipient-name">
+				<input type="text" id='phone' name="phone" class="form-control" id="recipient-name">
 			  </div>
 			  <div class="form-group">
 				<label for="message-text" class="col-form-label">Address:</label>
-				<textarea class="form-control" name="address" id="message-text"></textarea>
+				<textarea class="form-control" id='address' name="address" id="message-text"></textarea>
 			  </div>
 			  <div class="form-group">
 				<label for="recipient-name" class="col-form-label">Pincode:</label>
-				<input type="text" name="pincode" class="form-control" id="recipient-name">
+				<input type="text" name="pincode" id='pincode' class="form-control" id="recipient-name">
 			  </div>
 			  <div class="modal-footer">
-				<button type="submit" class="btn btn-primary">Checkout</button>
+				<button id='pay-btn'  class="btn btn-primary" style="float: right;" disabled>Pay with Razorpay</button>
+				
 			  </div>
 			</form>
 		  </div>
@@ -110,5 +153,98 @@
 	</div>
 	
 </body>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+				<script>
+					function checkFields() {
+						const phone = document.getElementById('phone').value;
+						const address = document.getElementById('address').value;
+						const pincode = document.getElementById('pincode').value;
+						const payButton = document.getElementById('pay-btn');
+						
+						// Enable or disable the payment button
+						if (phone && address && pincode) {
+							payButton.disabled = false;  // Enable button if all fields are filled
+						} else {
+							payButton.disabled = true;   // Disable button if any field is blank
+						}
+					}
+					document.getElementById('phone').addEventListener('input', checkFields);
+    				document.getElementById('address').addEventListener('input', checkFields);
+    				document.getElementById('pincode').addEventListener('input', checkFields);
+					var options = {
+					
+					// Enter the Key ID generated from the Dashboard
+						key: "rzp_test_NhGDVyDYFrniMc", 
+						
+						// Amount is in currency subunits.
+						// Default currency is INR. Hence, 
+						// 50000 refers to 50000 paise
+						amount: "{{ amount }}", 
+						currency: "{{ currency }}",
+						
+						// Your/store name.
+						name: "Dj Razorpay", 
+						
+						// Pass the `id` obtained in the response of Step 1
+						order_id: "{{razorpay_order_id}}", 
+						callback_url: "/checkout/",
+						prefill: {
+							name: "Customer Name",
+							email: "customer@example.com",
+							contact: "9876543210",
+						},
+						theme: {
+							color: "#F37254" // You can set a color theme for the checkout
+						},
+						"handler": function (response) {
+
+							var payment_id = response.razorpay_payment_id;
+							var order_id = response.razorpay_order_id;
+							var signature = response.razorpay_signature;
+
+							// You can send this data to your backend for verification and further processing
+							console.log('Payment ID: ' + payment_id);
+							console.log('Order ID: ' + order_id);
+							console.log('Signature: ' + signature);
+
+							// You can send the payment data to your backend via AJAX to verify the payment
+							$.ajax({
+								
+								method: 'POST',
+								url: '/checkout/',
+								data: {
+									razorpay_payment_id: payment_id,
+									razorpay_order_id: order_id,
+									razorpay_signature: signature,
+									'phone':document.getElementById('phone').value,
+									'address':document.getElementById('address').value,
+									'pincode':document.getElementById('pincode').value,
+								},
+								success: function(response) {
+									console.log('Response from server:', response);  // This will help to understand the structure of the response
+									if (response.status === 'success') {
+										alert('Payment successful!');
+										window.location.href = '/index/';  // Redirect to success page
+									} else {
+										alert('Payment failed: ' + response.message);  // Display the failure message
+									}
+								},
+								error: function(xhr, status, error) {
+									// Handle errors (e.g., network issues, server errors)
+									alert('An error occurred: ' + error);
+								}
+							});
+						},
+					};
+					
+					// initialise razorpay with the options.
+					var rzp1 = new Razorpay(options);
+					
+					// add event listener to the payment button.
+					document.getElementById("pay-btn").onclick = function (e) {
+					rzp1.open();
+					e.preventDefault();
+					};
+				</script>
 </html>
 {% endblock %}
