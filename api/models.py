@@ -104,28 +104,28 @@ class Cart(models.Model):
         return sum(item.cart_product.discounted_price() * item.quantity for item in self.items.all())
     
 class Order(models.Model):
-    image=models.ImageField(upload_to='order')
-    ord_product=models.CharField(max_length=1000,default='')
     user=models.ForeignKey(CustomUser,on_delete=models.CASCADE)
-    quantity=models.CharField(max_length=5)
-    price=models.IntegerField()
-    total=models.CharField(max_length=100,default='')
     address=models.TextField()
     phone=models.CharField(max_length=10)
     pincod=models.CharField(max_length=6)
     date=models.DateField(default=datetime.datetime.today)
-
     razorpay_orderid=models.CharField(max_length=500,null=True,blank=True)
     razorpay_paymentid=models.CharField(max_length=500,null=True,blank=True)
     razorpay_signature=models.CharField(max_length=500,null=True,blank=True)
 
     ORD_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
+        ('Order Placed', 'Order Placed'),
+        ('Processing', 'Processing'),
+        ('Packaged', 'Packaged'),
+        ('Shipped', 'Shipped'),
+        ('Out for Delivery', 'Out for Delivery'),
+        ('Cancelled', 'Cancelled'),
     ]
-    status=models.CharField(max_length=100,choices=ORD_STATUS_CHOICES,default='PENDING')
+    status=models.CharField(max_length=100,choices=ORD_STATUS_CHOICES,default='Order Placed')
 
+    def __str__(self):
+        return self.razorpay_orderid if self.razorpay_orderid else "No Razorpay Order ID"
+   
     def cancle_order(self):
         if self.status != 'CANCELLED':
             self.status='CANCELLED'
@@ -139,7 +139,14 @@ class Order(models.Model):
                     fail_silently=False,
                 )
 
-        
+class order_items(models.Model):
+    orderid=models.ForeignKey(Order,on_delete=models.CASCADE)
+    image=models.ImageField(upload_to='order')
+    ord_product=models.CharField(max_length=1000,default='')
+    quantity=models.CharField(max_length=5)
+    price=models.IntegerField()
+    total=models.CharField(max_length=100,default='')
+
 class blog(models.Model):
     name=models.CharField(max_length=100)
     body=RichTextUploadingField()

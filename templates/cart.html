@@ -162,7 +162,7 @@
 						const payButton = document.getElementById('pay-btn');
 						
 						// Enable or disable the payment button
-						if (phone && address && pincode) {
+						if	 (phone && address && pincode) {
 							payButton.disabled = false;  // Enable button if all fields are filled
 						} else {
 							payButton.disabled = true;   // Disable button if any field is blank
@@ -194,7 +194,7 @@
 							contact: "9876543210",
 						},
 						theme: {
-							color: "#F37254" // You can set a color theme for the checkout
+							color: "#F37254"
 						},
 						"handler": function (response) {
 
@@ -202,12 +202,6 @@
 							var order_id = response.razorpay_order_id;
 							var signature = response.razorpay_signature;
 
-							// You can send this data to your backend for verification and further processing
-							console.log('Payment ID: ' + payment_id);
-							console.log('Order ID: ' + order_id);
-							console.log('Signature: ' + signature);
-
-							// You can send the payment data to your backend via AJAX to verify the payment
 							$.ajax({
 								
 								method: 'POST',
@@ -221,29 +215,27 @@
 									'pincode':document.getElementById('pincode').value,
 								},
 								success: function(response) {
-									console.log('Response from server:', response);  // This will help to understand the structure of the response
+									console.log('Response from server:', response);  
 									if (response.status === 'success') {
 										alert('Payment successful!');
-										window.location.href = '/index/';  // Redirect to success page
+										window.location.href = '/index/';  
 									} else {
-										alert('Payment failed: ' + response.message);  // Display the failure message
+										alert('Payment failed: ' + response.message); 
 									}
 								},
 								error: function(xhr, status, error) {
-									// Handle errors (e.g., network issues, server errors)
 									alert('An error occurred: ' + error);
 								}
 							});
 						},
 					};
 					
-					// initialise razorpay with the options.
 					var rzp1 = new Razorpay(options);
 					
 					// add event listener to the payment button.
 					document.getElementById("pay-btn").onclick = function (e) {
-					rzp1.open();
-					e.preventDefault();
+						rzp1.open();
+						e.preventDefault();
 					};
 				</script>
 </html>

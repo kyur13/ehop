@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate,login,logout
 from django.contrib import messages
 from rest_framework.views import APIView
 from .serializer import Loginserial
-from api.models import CustomUser,product,contactus,Cart,categories,price_range,Order,blog
+from api.models import CustomUser,product,contactus,Cart,categories,price_range,Order,blog,order_items
 from django.conf import settings
 import requests
 from api.serializer import contactserializer
@@ -369,8 +369,7 @@ def cart_detail(request):
         razorpay_order_id = pay['id']
         callback_url = 'http://127.0.0.1:8000/checkout/'   
         
-        print(pay)
-        
+
     else:
         cart_cookie = request.COOKIES.get('cart', '[]')
         cart_products = json.loads(cart_cookie)
@@ -427,14 +426,8 @@ def checkout(request):
         pho = request.POST.get('phone')  # Phone number
         add = request.POST.get('address')  # Address
         pin = request.POST.get('pincode')
-        print(add,pho,pin)
-        
-
-
         
         try:
-          
-            # get the required parameters from post request.
             payment_id = request.POST.get('razorpay_payment_id', '')
             razorpay_order_id = request.POST.get('razorpay_order_id', '')
             signature = request.POST.get('razorpay_signature', '')
@@ -443,57 +436,75 @@ def checkout(request):
                 'razorpay_payment_id': payment_id,
                 'razorpay_signature': signature
             }
-            print(params_dict)
-            # verify the payment signature.
-            result = client.utility.verify_payment_signature(
-                params_dict)
+            result = client.utility.verify_payment_signature(params_dict)
             print(result)
             if result:
-               
                 if items:
+                    ord=Order(
+                        user=request.user,
+                        address=add,
+                        phone=pho,
+                        pincod=pin,
+                        razorpay_orderid=razorpay_order_id,
+                        razorpay_paymentid=payment_id,
+                        razorpay_signature=signature
+                    )
                     for i in items:
-                        ord=Order(
-                            user=request.user,
+                        orditems=order_items(
                             ord_product=i.cart_product.name,
                             price=i.cart_product.discounted_price(),
                             quantity=i.quantity,
                             image=i.cart_product.img,
-                            address=add,
-                            phone=pho,
-                            pincod=pin,
-                            total=i.cart_product.discounted_price()*i.quantity
+                            total=i.cart_product.discounted_price()*i.quantity,
+                            orderid=ord
                         )
                         ord.save()
+                        orditems.save()
                     items.delete()
                     return JsonResponse({'status': 'success', 'message': 'Payment successful'})
                 else:
                     messages.error(request,"add something in cart..")
                     return JsonResponse({'status': 'failure', 'message': 'Payment verification failed'}, status=400)
-                # except:
-
-                #     # if there is an error while capturing payment.
-                #     return render(request, 'paymentfail.html')
             else:
-
-                # if signature verification fails.
-                return render(request, 'paymentfail.html')
+                return JsonResponse({'status': 'failure', 'message': 'Payment verification failed'}, status=400)
         except Exception as e:
-
-           print(e)
+            print(e)
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
     return HttpResponse('this is checkout page.')
 
+
+from collections import defaultdict
 @login_required(login_url='login')
 def yourorder(request):
     user=request.user
-    ord=Order.objects.filter(user=user).values()
+    ord=Order.objects.filter(user=user).order_by('-id')
+    # orditm=[]
+    # for od in ord:
+    #     orditm=order_items.objects.filter(orderid=od)
+    grouped_orders = defaultdict(list)
+    for od in ord:
+        orditm=order_items.objects.filter(orderid=od)
+        for a in orditm:
+            grouped_orders[od.razorpay_orderid].append(a)
+        
+    print(dict(grouped_orders))
     data={
         'ord':ord,
+        'orditm':dict(grouped_orders),
     }
+    if request.method == 'POST':
+        id=request.POST.getlist('cancel_order')
+        for a in id:
+            ord=Order.objects.filter(id=a)
+            ord.delete()
+
+        return redirect("yourorder")
     return render(request,'yourorder.html',data)
 
 @login_required(login_url='login')
 def ordcancle(request, id):
-    ord=Order.objects.filter(id=id)
+    ord=Order.objects.filter(razorpay_orderid=id)
     ord.delete()
 
     return redirect("yourorder")

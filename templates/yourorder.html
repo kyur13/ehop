@@ -1,66 +1,85 @@
 {% extends "base.html" %}
 	{% block content %}
-	<section id="cart_items">
-		<div class="container">
-			<div class="breadcrumbs">
-				<ol class="breadcrumb">
-				  <li><a href="#">Home</a></li>
-				  <li class="active">Your Order</li>
-				</ol>
-			</div>
-			<div class="table-responsive cart_info">
-				
-				<table class="table table-condensed">
-					<thead>
-						<tr class="cart_menu">
-							<td class="image">Item</td>
-							<td class="description">Name</td>
-							<td class="price">Price</td>
-							<td class="quantity">Quantity</td>
-							<td class="total">Total</td>
-                            <td class="total">Status</td>
-							<td></td>
-						</tr>
-					</thead>
-					<tbody>
-						{% for a in ord %}
-						<tr>
-							<td class="cart_product">
-								<a href=""><img src="/media/{{a.image}}" alt=""></a>
-							</td>
-							<td class="cart_description">
-								<h4><a href="">{{a.ord_product}}</a></h4>
-							</td>
-							<td class="cart_price">
-								<p>${{a.price}}</p>
-							</td>
-							<td class="cart_quantity">
-								<div class="cart_quantity_button">
-									<input class="cart_quantity_input" type="text" name="quantity" value="{{a.quantity}}" autocomplete="off" size="2" readonly>
-								</div>
-							</td>
-							<td class="cart_total">
-								<p class="cart_total_price">${{ a.total }}</p>
-							</td>
-                            <td class="cart_total">
-								<p class="cart_total_price">{{ a.status }}</p>
-							</td>
-                            {% if a.status == 'PENDING' %}
-							<td class="cart_delete">
-								<a class="cart_quantity_delete" href="{% url 'ordcancle' a.id %}"><i class="fa fa-times"></i></a>
-							</td>
-                            {% endif %}
-						</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
-			
-		</div>
-	</section> <!--/#cart_items-->
-	<br>
+	<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders</title>
+    
+    <style>
+        
+        
+        h2 { text-align: center; color: #333; }
+        .order-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 10px; background: #fff; }
+        .order-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .order-header p { margin: 5px 0; }
+        .order-status { font-weight: bold; color: green; }
+        .order-items { display: flex; flex-direction: column; margin-top: 10px; }
+        .product { display: flex; align-items: center; margin-bottom: 10px; }
+        .product img { width: 80px; height: 80px; border-radius: 5px; margin-right: 15px; }
+        .product-info p { margin: 3px 0; }
+        .order-actions { margin-top: 10px; }
+        .btn { display: inline-block; padding: 8px 12px; color: white; text-decoration: none; border-radius: 5px; margin-right: 5px; font-size: 14px; }
+        .btn.cancel { background: red; }
+        .btn.track { background: #007bff; }
+        .btn.reorder { background: #ff9900; }
+    </style>
+</head>
+<body>
 
-	
+<div class="container">
+    <h2>Your Orders</h2>
+    {% for order in ord %}
+    <div class="order-box">
+        <div class="order-header">
+            <div>
+                <p><strong>Order ID:</strong> {{ order.razorpay_orderid }}</p>
+                <p><strong>Order Date:</strong> {{ order.date }}</p>
+                <p><strong>Status:</strong> <span class="order-status">{{ order.status }}</span></p>
+            </div>
+            
+        </div>
+
+        <div class="order-items">
+            {% for orderid,orderitem in orditm.items %}
+                {% if orderid == order.razorpay_orderid %}
+                    {% for orderitm in orderitem %}
+                        <div class="product">
+                            <img src="/media/{{orderitm.image}}" alt="">
+                            <div class="product-info">
+                                <p><strong>{{ orderitm.ord_product }}</strong></p>
+                                <p>Quantity: {{ orderitm.quantity}}</p>
+                                <p>Price: ${{ orderitm.price }}</p>
+                                <p><strong>Total Price:</strong> ${{ orderitm.total }}</p>
+                            </div>
+                            {% comment %} <div style="margin-left:800px;">
+                                {% if order.status == "Order Placed" or order.status == "Processing" %}
+                                <form action="{% url 'yourorder' %}" method='post'>
+                                    {% csrf_token %}
+                                    <input type="checkbox" id="cancel_{order.id}" name="cancel_order" value="{{order.razorpay_orderid}}">
+                                {% endif %}
+                            </div> {% endcomment %}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+			{% endfor %}
+        </div>
+
+        <div class="order-actions">
+            {% if order.status == "Shipped" %}
+                <a href="" class="btn track"><i class="fa fa-truck"></i> Track Order</a>
+            {% endif %}
+            {% if order.status == "Order Placed" or order.status == "Processing" %}
+                <a href="{% url 'ordcancle' order.razorpay_orderid %}" class="btn cancel"><i class="fa fa-times"></i> Cancel Order</a>
+            {% endif %}
+        </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 </body>
 </html>
+
 {% endblock %}

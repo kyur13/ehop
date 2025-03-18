@@ -36,7 +36,7 @@ urlpatterns = [
     path('cart/', views.cart_detail, name='cart_detail'),
     path('checkout/', views.checkout, name='checkout'),
     path('yourorder/', views.yourorder, name='yourorder'),
-    path('yourorder/cancle/<int:id>/', views.ordcancle, name='ordcancle'),
+    path('yourorder/cancle/<str:id>/', views.ordcancle, name='ordcancle'),
     path('ckeditor/',include('ckeditor_uploader.urls'))
 ]
 

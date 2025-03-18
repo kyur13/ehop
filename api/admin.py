@@ -1,7 +1,7 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser,product,Cart,categories,price_range,Order,blog
+from .models import CustomUser,product,Cart,categories,price_range,Order,blog,order_items
 
 class customeuseradmin(UserAdmin):
     model=CustomUser
@@ -154,9 +154,13 @@ def export_to_pdf(modeladmin, request, queryset):
 
 @admin.register(Order)
 class Orderadmin(admin.ModelAdmin):
-    list_display=['id','image','ord_product','user','quantity','price','total','address','phone','pincod','status']
+    list_display=['id','user','razorpay_paymentid','address','phone','pincod','status']
     actions = [cancel_order_action,export_to_excel,export_to_pdf]
-    search_fields=('ord_product','status')
+    search_fields=('ord_product','status','razorpay_paymentid')
+
+@admin.register(order_items)
+class orderitemadmin(admin.ModelAdmin):
+    list_display=('orderid','ord_product','image','quantity','price','total')
 
 @admin.register(blog)
 class blogadmin(admin.ModelAdmin):
